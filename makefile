@@ -20,6 +20,17 @@ export MAKEFLAGS := --no-print-directory
 
 # -------- pseudo-targets --------
 
+# show usage information
+.PHONY : help
+define HELP
+usage help:
+	make certs    - generate all signing certificates with openssl
+	make updates  - create all signed efi variable updates
+	make clean    - remove all files
+endef
+help :
+	@: $(info $(HELP))
+
 # generate all signing keys and certificates
 .PHONY : certs
 certs : $(CA).crt $(PK).crt $(KEK).crt $(DB).crt
