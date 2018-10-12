@@ -1,7 +1,9 @@
 # Copyright (c) 2018 Anton Semjonov
 # Licensed under the MIT License
 
-# certificate subject stem
+# ------- variables --------
+
+# certificate subject base
 DNBASE := OU=Secureboot Keys
 
 # target filenames
@@ -13,16 +15,32 @@ DB  := DatabaseKey
 # openssl config
 CONFIG  := ./openssl.cnf
 
-# generate all signing keys
-all: $(CA).crt $(PK).crt $(KEK).crt $(DB).crt
+# makeflags for any submakes
+export MAKEFLAGS := --no-print-directory
+
+# -------- pseudo-targets --------
+
+# generate all signing keys and certificates
+.PHONY : certs
+certs : $(CA).crt $(PK).crt $(KEK).crt $(DB).crt
+
+# generate all signed efivar updates
+.PHONY : updates
+updates :
+	make $(PK).auth        SIGNER=$(PK)  VAR=PK
+	make Remove$(PK).auth  SIGNER=$(PK)  VAR=PK
+	make $(KEK).auth       SIGNER=$(PK)  VAR=KEK
+	make $(DB).auth        SIGNER=$(KEK) VAR=db
 
 # delete all files
 .PHONY: clean
 clean:
-	@read -p "sure? [type 'yes'] " sure && [[ $$sure == yes ]]
+	@read -p "are you sure? [type 'yes'] " sure && [[ $$sure == yes ]]
 	git clean -fdx
 
-uuid.txt:
+# -------- actual targets --------
+
+uuid:
 	uuidgen -r > $@
 
 # create certificate authority
@@ -35,3 +53,15 @@ $(CA).crt :
 %.crt : $(CA).crt
 	openssl req -new -config "$(CONFIG)" -subj '/$(DNBASE)/CN=$*/' -keyout "$*.key" |\
 	openssl x509 -req -extfile $(CONFIG) -CA "$(CA).crt" -CAkey "$(CA).key" -out "$*.crt"
+
+# create efi signature list from certificate
+%.esl : %.crt uuid
+	cert-to-efi-sig-list -g "$$(< uuid)" "$<" "$@"
+
+# empty efi signature list
+Remove%.esl :
+	printf '' > $@
+
+# create signed efivar update, needs SIGNER and VAR
+%.auth : %.esl
+	sign-efi-sig-list -g uuid -k $(SIGNER).key -c $(SIGNER).crt $(VAR) $< $@
