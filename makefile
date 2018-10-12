@@ -18,9 +18,6 @@ DB  := DatabaseKey
 # openssl config
 CONFIG  := ./openssl.cnf
 
-# makeflags for any submakes
-export MAKEFLAGS := --no-print-directory
-
 # -------- pseudo-targets --------
 
 # show usage information
@@ -46,7 +43,7 @@ updates : certs $(PK).update $(PK).remove $(KEK).update $(DB).update
 .PHONY: clean
 clean:
 	@read -p "really delete everything? (type 'yes'): " sure && [[ $$sure == yes ]]
-	git clean -fdx || rm -rf *.crt *.key *.update *.remove *.esl guid
+	git clean -fdx || rm -rf $$(< .gitignore)
 
 # -------- actual targets --------
 
