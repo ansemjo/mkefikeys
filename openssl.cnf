@@ -17,16 +17,10 @@ extendedKeyUsage        = codeSigning
 
 default_bits        = 2048
 default_md          = sha256
-default_days        = 30
+default_days        = 3650
 
 encrypt_key         = no
 prompt              = no
 distinguished_name  = empty
 
-# -------- distinguished name preset -------
 [ empty ]
-[ predefined ]
-C     = DE
-O     = rz.semjonov.de
-OU    = SecureBoot Keys
-CN    = $ENV::CN
