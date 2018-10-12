@@ -1,5 +1,8 @@
 # Copyright (c) 2018 Anton Semjonov
 # Licensed under the MIT License
+#
+# Partially based on work by Roderik W. Smith:
+#  https://www.rodsbooks.com/efi-bootloaders/controlling-sb.html
 
 # ------- variables --------
 
