@@ -26,42 +26,45 @@ certs : $(CA).crt $(PK).crt $(KEK).crt $(DB).crt
 
 # generate all signed efivar updates
 .PHONY : updates
-updates :
-	make $(PK).auth        SIGNER=$(PK)  VAR=PK
-	make Remove$(PK).auth  SIGNER=$(PK)  VAR=PK
-	make $(KEK).auth       SIGNER=$(PK)  VAR=KEK
-	make $(DB).auth        SIGNER=$(KEK) VAR=db
+updates : certs $(PK).update $(PK).remove $(KEK).update $(DB).update
 
 # delete all files
 .PHONY: clean
 clean:
-	@read -p "are you sure? [type 'yes'] " sure && [[ $$sure == yes ]]
-	git clean -fdx
+	@read -p "really delete everything? (type 'yes'): " sure && [[ $$sure == yes ]]
+	git clean -fdx || rm -rf *.crt *.key *.update *.remove *.esl guid
 
 # -------- actual targets --------
 
-uuid:
+guid:
 	uuidgen -r > $@
 
 # create certificate authority
-$(CA).crt :
+$(CA).crt $(CA).key :
 	uuidgen -r | tr -d '-' > $(CA).srl
 	openssl req -new -config $(CONFIG) -x509 -set_serial "0x$$(< $(CA).srl)" -extensions ext_ca \
 		-keyout $(CA).key -out $(CA).crt -subj '/$(DNBASE)/CN=Certificate Authority/'
 
 # create secureboot signing keys
-%.crt : $(CA).crt
+%.crt %.key : $(CA).crt
 	openssl req -new -config "$(CONFIG)" -subj '/$(DNBASE)/CN=$*/' -keyout "$*.key" |\
 	openssl x509 -req -extfile $(CONFIG) -CA "$(CA).crt" -CAkey "$(CA).key" -out "$*.crt"
 
 # create efi signature list from certificate
-%.esl : %.crt uuid
-	cert-to-efi-sig-list -g "$$(< uuid)" "$<" "$@"
+%.esl : %.crt guid
+	cert-to-efi-sig-list -g "$$(< guid)" "$<" "$@"
 
-# empty efi signature list
-Remove%.esl :
-	printf '' > $@
+# signer relationships
+.SECONDARY: PK KEK db
+PK KEK db:
+efisig_$(PK)  := $(PK).key  $(PK).crt  PK
+efisig_$(KEK) := $(PK).key  $(PK).crt  KEK
+efisig_$(DB)  := $(KEK).key $(KEK).crt db
 
-# create signed efivar update, needs SIGNER and VAR
-%.auth : %.esl
-	sign-efi-sig-list -g uuid -k $(SIGNER).key -c $(SIGNER).crt $(VAR) $< $@
+# create signed efivar update and removal
+.SECONDEXPANSION:
+%.update : $$(efisig_%) %.esl
+	sign-efi-sig-list -g guid -k $(word 1,$^) -c $(word 2,$^) $(word 3,$^) $(word 4,$^) $*.update
+%.remove : $$(efisig_%)
+	sign-efi-sig-list -g guid -k $(word 1,$^) -c $(word 2,$^) $(word 3,$^) /dev/null $*.remove
+

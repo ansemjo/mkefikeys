@@ -2,5 +2,6 @@
 *.key
 *.srl
 *.esl
-*.auth
-uuid
+*.update
+*.remove
+guid
