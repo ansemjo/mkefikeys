@@ -62,6 +62,7 @@ $(CA).crt $(CA).key :
 	openssl x509 -req -extfile $(CONFIG) -CA "$(CA).crt" -CAkey "$(CA).key" -out "$*.crt"
 
 # create efi signature list from certificate
+.PRECIOUS: %.esl
 %.esl : %.crt guid
 	cert-to-efi-sig-list -g "$$(< guid)" "$<" "$@"
 
