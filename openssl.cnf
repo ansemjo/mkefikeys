@@ -10,7 +10,7 @@ basicConstraints        = CA:true
 subjectKeyIdentifier    = hash
 authorityKeyIdentifier  = keyid
 basicConstraints        = critical,CA:FALSE
-extendedKeyUsage        = 1.3.6.1.4.1.2312.16.1.2
+extendedKeyUsage        = codeSigning
 
 # -------- requests --------
 [ req ]
