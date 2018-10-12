@@ -21,25 +21,12 @@ default_days        = 30
 
 encrypt_key         = no
 prompt              = no
-#distinguished_name  = namespace
-distinguished_name  = predefined
+distinguished_name  = empty
 
 # -------- distinguished name preset -------
-[ namespace ]
-
-countryName                     = Country Code
-stateOrProvinceName             = State or Province
-localityName                    = Locality / City
-organizationName                = Organization Name
-
-organizationalUnitName          = Organizational Unit
-organizationalUnitName_default  = Secureboot Keys
-
-commonName                      = Common Name (Keytype)
-commonName_default              =
-
+[ empty ]
 [ predefined ]
-C  = DE
-O  = rz.semjonov.de
-OU = SecureBoot Keys
-CN = PREDEFINED
+C     = DE
+O     = rz.semjonov.de
+OU    = SecureBoot Keys
+CN    = $ENV::CN
