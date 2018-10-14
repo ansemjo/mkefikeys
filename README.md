@@ -1,4 +1,4 @@
-# efikeys
+# mkefikeys
 
 To take full control of you computer's SecureBoot platform you need to generate a custom set of keys
 and install them in your computer's firmware. Information on SecureBoot in general can be found on
@@ -26,6 +26,13 @@ Install the `*.auth` files with [KeyTool][3] and use `sbsign` to sign your kerne
 [1]: https://wiki.archlinux.org/index.php/Secure_Boot
 [2]: https://wiki.gentoo.org/wiki/Sakaki%27s_EFI_Install_Guide/Configuring_Secure_Boot
 [3]: https://github.com/mjg59/efitools
+
+## install
+
+Install this programm with the included `install.mk` makefile. It optionally accepts a `DESTDIR`
+argument for packaging:
+
+    sudo make -f install.mk install DESTDIR=${pkgdir}
 
 # LICENSE
 
