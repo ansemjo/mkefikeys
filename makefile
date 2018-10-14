@@ -15,7 +15,29 @@ SHELL := /usr/bin/bash
 DNBASE := OU=Secureboot Keys
 
 # openssl config
-CONFIG  := ./openssl.cnf
+define OPENSSLCNF
+extensions = ext_sb
+[ ext_ca ]
+subjectKeyIdentifier    = hash
+basicConstraints        = CA:true
+[ ext_sb ]
+subjectKeyIdentifier    = hash
+authorityKeyIdentifier  = keyid
+basicConstraints        = critical,CA:FALSE
+extendedKeyUsage        = codeSigning
+[ req ]
+default_bits            = 2048
+default_md              = sha256
+default_days            = 3650
+encrypt_key             = no
+prompt                  = no
+distinguished_name      = empty
+[ empty ]
+endef
+export OPENSSLCNF
+
+# inline config via subshell
+CONFIG := <(echo "$$OPENSSLCNF")
 
 # target filenames
 PK  := PlatformKey
