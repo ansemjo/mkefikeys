@@ -1,3 +1,5 @@
+#!/usr/bin/make -f
+
 # Copyright (c) 2018 Anton Semjonov
 # Licensed under the MIT License
 #
@@ -6,17 +8,29 @@
 
 # ------- variables --------
 
+# command shell
+SHELL := /usr/bin/bash
+
 # certificate subject base
 DNBASE := OU=Secureboot Keys
 
+# openssl config
+CONFIG  := ./openssl.cnf
+
 # target filenames
-CA  := CertificateAuthority
 PK  := PlatformKey
 KEK := KeyExchangeKey
 DB  := DatabaseKey
 
-# openssl config
-CONFIG  := ./openssl.cnf
+# signature relationships
+signer-$(PK)  := $(PK).key  $(PK).crt
+signer-$(KEK) := $(PK).key  $(PK).crt
+signer-$(DB)  := $(KEK).key $(KEK).crt
+
+# efi variable names
+efivar-$(PK)  := PK
+efivar-$(KEK) := KEK
+efivar-$(DB)  := db
 
 # -------- pseudo-targets --------
 
@@ -33,11 +47,11 @@ help :
 
 # generate all signing keys and certificates
 .PHONY : certs
-certs : $(CA).crt $(PK).crt $(KEK).crt $(DB).crt
+certs : $(PK).crt $(KEK).crt $(DB).crt
 
 # generate all signed efivar updates
 .PHONY : updates
-updates : certs $(PK).update $(PK).remove $(KEK).update $(DB).update
+updates : certs $(PK).auth $(KEK).auth $(DB).auth
 
 # delete all files
 .PHONY: clean
@@ -45,38 +59,33 @@ clean:
 	@read -p "really delete everything? (type 'yes'): " sure && [[ $$sure == yes ]]
 	git clean -fdx || rm -rf $$(< .gitignore)
 
+# never automatically remove these precious files
+.PRECIOUS: %.key %.crt %.auth
+
 # -------- actual targets --------
 
-guid:
-	uuidgen -r > $@
+# random guid for efi signature lists
+guid: ;	uuidgen -r > $@
 
-# create certificate authority
-$(CA).crt $(CA).key :
-	uuidgen -r | tr -d '-' > $(CA).srl
-	openssl req -new -config $(CONFIG) -x509 -set_serial "0x$$(< $(CA).srl)" -extensions ext_ca \
-		-keyout $(CA).key -out $(CA).crt -subj '/$(DNBASE)/CN=Certificate Authority/'
+# random inline serial for openssl certs
+serial := <(uuidgen -r | tr -d '-')
 
-# create secureboot signing keys
-%.crt %.key : $(CA).crt
-	openssl req -new -config "$(CONFIG)" -subj '/$(DNBASE)/CN=$*/' -keyout "$*.key" |\
-	openssl x509 -req -extfile $(CONFIG) -CA "$(CA).crt" -CAkey "$(CA).key" -out "$*.crt"
+# create platform signing key
+$(PK).crt $(PK).key :
+	openssl req -x509 -new -config $(CONFIG) -extensions ext_ca	-keyout $(PK).key -out $(PK).crt -subj '/$(DNBASE)/CN=$(PK)/'
+
+# create keyexchange and database signing keys
+.SECONDEXPANSION:
+%.crt %.key : $$(signer-%)
+	openssl req -new -config $(CONFIG) -subj '/$(DNBASE)/CN=$*/' -keyout $*.key |\
+	  openssl x509 -req -extfile $(CONFIG) -CAkey $(word 1,$^) -CA $(word 2,$^) -CAserial $(serial) -out $*.crt
 
 # create efi signature list from certificate
-.PRECIOUS: %.esl
 %.esl : %.crt guid
-	cert-to-efi-sig-list -g "$$(< guid)" "$<" "$@"
-
-# signer relationships
-.SECONDARY: PK KEK db
-PK KEK db:
-efisig_$(PK)  := $(PK).key  $(PK).crt  PK
-efisig_$(KEK) := $(PK).key  $(PK).crt  KEK
-efisig_$(DB)  := $(KEK).key $(KEK).crt db
+	cert-to-efi-sig-list -g $$(< guid) $< $@
 
 # create signed efivar update and removal
 .SECONDEXPANSION:
-%.update : $$(efisig_%) %.esl
-	sign-efi-sig-list -g guid -k $(word 1,$^) -c $(word 2,$^) $(word 3,$^) $(word 4,$^) $*.update
-%.remove : $$(efisig_%)
-	sign-efi-sig-list -g guid -k $(word 1,$^) -c $(word 2,$^) $(word 3,$^) /dev/null $*.remove
+%.auth : %.esl $$(signer-%)
+	sign-efi-sig-list -g guid -k $(word 2,$^) -c $(word 3,$^) $(efivar-$*) $< $@
 

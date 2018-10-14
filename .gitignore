@@ -2,6 +2,7 @@
 *.key
 *.srl
 *.esl
+*.auth
 *.update
 *.remove
 guid
