@@ -80,10 +80,11 @@ updates : certs $(PK).auth $(KEK).auth $(DB).auth
 
 # delete all files
 .PHONY: clean
+DELETE := *.key *.crt *.esl *.auth guid
 clean:
-	git clean -ndx || cat .gitignore
+	ls $(DELETE)
 	@read -p "really delete these files? (type 'yes'): " sure && [[ $$sure == yes ]]
-	git clean -fdx || rm -rf $$(< .gitignore)
+	rm -f $(DELETE)
 
 # never automatically remove these precious files
 .PRECIOUS: %.key %.crt %.auth
