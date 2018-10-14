@@ -56,7 +56,8 @@ updates : certs $(PK).auth $(KEK).auth $(DB).auth
 # delete all files
 .PHONY: clean
 clean:
-	@read -p "really delete everything? (type 'yes'): " sure && [[ $$sure == yes ]]
+	git clean -ndx || cat .gitignore
+	@read -p "really delete these files? (type 'yes'): " sure && [[ $$sure == yes ]]
 	git clean -fdx || rm -rf $$(< .gitignore)
 
 # never automatically remove these precious files
