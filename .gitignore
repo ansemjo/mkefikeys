@@ -1,4 +1,5 @@
 *.crt
+*.cer
 *.key
 *.srl
 *.esl

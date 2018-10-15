@@ -62,9 +62,20 @@ efivar-$(DB)  := db
 # show usage information
 .PHONY : help
 define HELP
-usage help:
-	make certs    - generate all signing certificates with openssl
-	make updates  - create all signed efi variable updates
+usage: mkefikeys <target> [ARGUMENTS=...]
+
+  certs   : generate all signing keys/certificates with openssl
+  der     : encode certificates in DER format to *.cer files
+  auth    : create signed efi variable updates
+
+  DNBASE  = certificate subject base ($(DNBASE))
+  DAYS    = validity period ($(DAYS))
+  BITS    = rsa keylength ($(BITS))
+  ENCRYPT = protect keys with a password ($(ENCRYPT))
+  PK      = platform key filename ($(PK))
+  KEK     = key exchange key filename ($(KEK))
+  DB      = database key filename ($(DB))
+
 endef
 help :
 	@: $(info $(HELP))
@@ -73,13 +84,15 @@ help :
 .PHONY : certs
 certs : $(PK).crt $(KEK).crt $(DB).crt
 
-# generate all signed efivar updates
-.PHONY : updates
-updates : certs $(PK).auth $(KEK).auth $(DB).auth
+# transform signing certificates to DER format
+der : $(PK).cer $(KEK).cer $(DB).cer
 
+# generate all signed efivar updates
+.PHONY : auth
+auth : certs $(PK).auth $(KEK).auth $(DB).auth
 
 # never automatically remove these precious files
-.PRECIOUS: %.key %.crt %.auth
+.PRECIOUS: %.key %.crt %.cer %.esl %.auth guid
 
 # -------- actual targets --------
 
@@ -98,6 +111,10 @@ $(PK).crt $(PK).key :
 %.crt %.key : $$(signer-%)
 	openssl req -new -config $(CONFIG) -subj '/$(DNBASE)/CN=$*/' -keyout $*.key |\
 	  openssl x509 -req -extfile $(CONFIG) -CAkey $(word 1,$^) -CA $(word 2,$^) -CAserial $(serial) -out $*.crt
+
+# output der formatted certificates
+%.cer : %.crt
+	openssl x509 -in $< -out $@ -outform DER
 
 # create efi signature list from certificate
 %.esl : %.crt guid
