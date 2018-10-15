@@ -65,7 +65,6 @@ define HELP
 usage help:
 	make certs    - generate all signing certificates with openssl
 	make updates  - create all signed efi variable updates
-	make clean    - remove all files
 endef
 help :
 	@: $(info $(HELP))
@@ -78,13 +77,6 @@ certs : $(PK).crt $(KEK).crt $(DB).crt
 .PHONY : updates
 updates : certs $(PK).auth $(KEK).auth $(DB).auth
 
-# delete all files
-.PHONY: clean
-DELETE := *.key *.crt *.esl *.auth guid
-clean:
-	ls $(DELETE)
-	@read -p "really delete these files? (type 'yes'): " sure && [[ $$sure == yes ]]
-	rm -f $(DELETE)
 
 # never automatically remove these precious files
 .PRECIOUS: %.key %.crt %.auth
