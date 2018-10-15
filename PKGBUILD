@@ -3,7 +3,7 @@
 pkgname="mkefikeys"
 pkgdesc="Generate signing keys and authenticated efivar updates for SecureBoot systems."
 
-pkgver=0.1
+pkgver=0.0.1
 pkgrel=1
 
 arch=('any')
