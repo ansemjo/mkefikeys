@@ -9,7 +9,7 @@ Roderick W. Smith's [pages][0] and various [wiki][1] [pages][2].
 This makefile automates the creation of the required certificates and signed updates for your
 firmware. GNU make 3.81+ is required.
 
-    mkefikeys updates
+    mkefikeys auth
 
 ## configure
 
@@ -17,10 +17,14 @@ The filenames can be customized with make variables `PK`, `KEK` and `DB`. Certif
 be customized with `DNBASE`. RSA key bits, validity period and key encryption can be configured with
 `BITS`, `DAYS` and `ENCRYPT`.
 
-    mkefikeys updates DNBASE="O=Acme Ltd./OU=SecureBoot" ENCRYPT=yes
+    mkefikeys auth DNBASE="O=Acme Ltd./OU=SecureBoot" ENCRYPT=yes
 
 Install the `*.auth` files with [KeyTool][3] and use `sbsign` to sign your kernels with
 `PlatformKey.{key,crt}`.
+
+Should you need DER-encoded certificates for your firmware, you can output them to *.cer files:
+
+    mkefikeys der
 
 [0]: https://www.rodsbooks.com/efi-bootloaders/controlling-sb.html
 [1]: https://wiki.archlinux.org/index.php/Secure_Boot
@@ -33,6 +37,9 @@ Install this programm with the included `install.mk` makefile. It optionally acc
 argument for packaging:
 
     sudo make -f install.mk install DESTDIR=${pkgdir}
+
+Arch Linux users can also use `makepkg -i` in this directory to install `mkefikeys-git` or install
+a tagged version from AUR with `$aurhelper -S mkefikeys`.
 
 # LICENSE
 
