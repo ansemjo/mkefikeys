@@ -64,10 +64,15 @@ efivar-$(DB)  := db
 define HELP
 usage: mkefikeys <target> [ARGUMENTS=...]
 
+ -- targets --
   certs   : generate all signing keys/certificates with openssl
+   pk     : .. up to platform cert
+   kek    : .. up to key exchange cert
+   db     : .. up to database cert
   der     : encode certificates in DER format to *.cer files
   auth    : create signed efi variable updates
 
+ -- arguments (defaults) --
   DNBASE  = certificate subject base ($(DNBASE))
   DAYS    = validity period ($(DAYS))
   BITS    = rsa keylength ($(BITS))
@@ -81,8 +86,11 @@ help :
 	@: $(info $(HELP))
 
 # generate all signing keys and certificates
-.PHONY : certs
+.PHONY : certs pk kek db
 certs : $(PK).crt $(KEK).crt $(DB).crt
+pk    : $(PK).crt
+kek   : pk $(KEK).crt
+db    : kek $(DB).crt
 
 # transform signing certificates to DER format
 der : $(PK).cer $(KEK).cer $(DB).cer
