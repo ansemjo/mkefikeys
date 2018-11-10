@@ -19,17 +19,24 @@ be customized with `DNBASE`. RSA key bits, validity period and key encryption ca
 
     mkefikeys auth DNBASE="O=Acme Ltd./OU=SecureBoot" ENCRYPT=yes
 
-Install the `*.auth` files with [KeyTool][3] and use `sbsign` to sign your kernels with
-`PlatformKey.{key,crt}`.
+Install the `*.auth` files with [KeyTool][3] and use `sbsign` or [`mksignkernels`][4] to sign your
+kernels with `PlatformKey.{key,crt}`.
 
-Should you need DER-encoded certificates for your firmware, you can output them to *.cer files:
+Should you need DER-encoded certificates for your firmware, you can output them to \*.cer files:
 
     mkefikeys der
+
+You can also use different settings for each certificate with the `pk`, `kek` and `db` targets:
+
+    mkefikeys pk kek ENCRYPT=yes
+    mkefikeys db
+    mkefikeys auth
 
 [0]: https://www.rodsbooks.com/efi-bootloaders/controlling-sb.html
 [1]: https://wiki.archlinux.org/index.php/Secure_Boot
 [2]: https://wiki.gentoo.org/wiki/Sakaki%27s_EFI_Install_Guide/Configuring_Secure_Boot
 [3]: https://github.com/mjg59/efitools
+[4]: https://github.com/ansemjo/mksignkernels
 
 ## install
 
@@ -38,8 +45,8 @@ argument for packaging:
 
     sudo make -f install.mk install DESTDIR=${pkgdir}
 
-Arch Linux users can also use `makepkg -i` in this directory to install `mkefikeys-git` or install
-a tagged version from AUR with `$aurhelper -S mkefikeys`.
+Arch Linux users can also use `makepkg -i` in this directory to install `mkefikeys-git` or install a
+tagged version from AUR with `$aurhelper -S mkefikeys`.
 
 # LICENSE
 
