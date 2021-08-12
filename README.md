@@ -14,13 +14,14 @@ firmware. GNU make 3.81+ is required.
 ## configure
 
 The filenames can be customized with make variables `PK`, `KEK` and `DB`. Certificate subjects can
-be customized with `DNBASE`. RSA key bits, validity period and key encryption can be configured with
-`BITS`, `DAYS` and `ENCRYPT`.
+be customized by setting a format string in `SUBJECT`, where `%kt` will be replaced with the key
+type. RSA key bits, validity period and key encryption can be configured with `BITS`, `DAYS` and
+`ENCRYPT`.
 
-    mkefikeys auth DNBASE="O=Acme Ltd./OU=SecureBoot" ENCRYPT=yes
+    mkefikeys auth SUBJECT="/O=Acme Ltd./OU=SecureBoot/CN=My %kt/" ENCRYPT=yes
 
-Install the `*.auth` files with [KeyTool][3] and use `sbsign` or [`mksignkernels`][4] to sign your
-kernels with `PlatformKey.{key,crt}`.
+Install the `*.auth` files with your UEFI's builtin key management tool or use [KeyTool][3]. Then
+use `sbsign` or [`mksignkernels`][4] to sign your kernels with `PlatformKey.{key,crt}`.
 
 Should you need DER-encoded certificates for your firmware, you can output them to \*.cer files:
 

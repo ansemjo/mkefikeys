@@ -11,8 +11,8 @@
 # command shell
 SHELL := /usr/bin/bash
 
-# certificate subject base
-DNBASE := OU=Secureboot Keys
+# certificate subject string format
+SUBJECT := /OU=Secureboot Keys/CN=%kt/
 
 # openssl config
 DAYS := 3650
@@ -73,7 +73,7 @@ usage: mkefikeys <target> [ARGUMENTS=...]
   auth    : create signed efi variable updates
 
  -- arguments (defaults) --
-  DNBASE  = certificate subject base ($(DNBASE))
+  SUBJECT = certificate subject format ($(SUBJECT))
   DAYS    = validity period ($(DAYS))
   BITS    = rsa keylength ($(BITS))
   ENCRYPT = protect keys with a password ($(ENCRYPT))
@@ -112,12 +112,12 @@ serial := <(uuidgen -r | tr -d '-')
 
 # create platform signing key
 $(PK).crt $(PK).key :
-	openssl req -x509 -new -config $(CONFIG) -extensions ext_ca	-keyout $(PK).key -out $(PK).crt -subj '/$(DNBASE)/CN=$(PK)/'
+	openssl req -x509 -new -config $(CONFIG) -extensions ext_ca	-keyout $(PK).key -out $(PK).crt -subj '$(subst %kt,$(PK),$(SUBJECT))'
 
 # create keyexchange and database signing keys
 .SECONDEXPANSION:
 %.crt %.key : $$(signer-%)
-	openssl req -new -config $(CONFIG) -subj '/$(DNBASE)/CN=$*/' -keyout $*.key |\
+	openssl req -new -config $(CONFIG) -subj '$(subst %kt,$*,$(SUBJECT))' -keyout $*.key |\
 	  openssl x509 -req -extfile $(CONFIG) -CAkey $(word 1,$^) -CA $(word 2,$^) -CAserial $(serial) -out $*.crt
 
 # output der formatted certificates
